@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import api from "../api/axious";
+import api from "../api/axios";
 const statCardConfig = [
   { key: "total_tasks", label: "Total Tasks", color: "bg-blue-600" },
   { key: "todo", label: "To Do", color: "bg-yellow-500" },

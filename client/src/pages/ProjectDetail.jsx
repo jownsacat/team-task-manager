@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import api from "../api/axious";
+import api from "../api/axios";
 const STATUS_OPTIONS = [
   "todo",
   "in_progress",

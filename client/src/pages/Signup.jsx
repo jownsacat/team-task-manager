@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api/axious";
+import api from "../api/axios";
 
 const Signup = () => {
   const navigate = useNavigate();
