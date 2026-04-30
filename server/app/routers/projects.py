@@ -1,24 +1,29 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from ..database import get_db
+from ..models import Project, ProjectMember
+from ..schemas import ProjectCreate, AddMember
 
-from app import models, schemas
-from app.database import get_db
+router = APIRouter(prefix="/projects", tags=["projects"])
 
-
-router = APIRouter()
-
-
-@router.post("/", response_model=schemas.ProjectOut, status_code=status.HTTP_201_CREATED)
-def create_project(payload: schemas.ProjectCreate, db: Session = Depends(get_db)):
-    # Minimal scaffold: until auth is wired, we default owner_id to 1.
-    project = models.Project(name=payload.name, description=payload.description, owner_id=1)
-    db.add(project)
+@router.post("/")
+def create_project(project: ProjectCreate, db: Session = Depends(get_db)):
+    new_project = Project(name=project.name, creator_id=1)  # replace 1 with current user later
+    db.add(new_project)
     db.commit()
-    db.refresh(project)
-    return project
+    db.refresh(new_project)
+    member = ProjectMember(project_id=new_project.id, user_id=new_project.creator_id, role="admin")
+    db.add(member)
+    db.commit()
+    return new_project
 
+@router.get("/")
+def get_projects(db: Session = Depends(get_db)):
+    return db.query(Project).all()
 
-@router.get("/", response_model=list[schemas.ProjectOut])
-def list_projects(db: Session = Depends(get_db)):
-    return db.query(models.Project).order_by(models.Project.id.desc()).all()
-
+@router.post("/{project_id}/members")
+def add_member(project_id: int, member: AddMember, db: Session = Depends(get_db)):
+    new_member = ProjectMember(project_id=project_id, user_id=member.user_id, role=member.role)
+    db.add(new_member)
+    db.commit()
+    return {"message": "Member added"}

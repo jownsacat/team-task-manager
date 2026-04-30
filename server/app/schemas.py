@@ -1,62 +1,39 @@
-from datetime import datetime
+from pydantic import BaseModel, EmailStr
 from typing import Optional
+from datetime import datetime
 
-from pydantic import BaseModel, EmailStr, Field
-
-
+# Auth
 class UserCreate(BaseModel):
+    name: str
     email: EmailStr
-    password: str = Field(min_length=6)
+    password: str
 
-
-class UserOut(BaseModel):
-    id: int
+class UserLogin(BaseModel):
     email: EmailStr
-    is_active: bool
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
-
+    password: str
 
 class Token(BaseModel):
     access_token: str
-    token_type: str = "bearer"
+    token_type: str
 
-
+# Projects
 class ProjectCreate(BaseModel):
     name: str
-    description: Optional[str] = None
 
+class AddMember(BaseModel):
+    user_id: int
+    role: str = "member"
 
-class ProjectOut(BaseModel):
-    id: int
-    name: str
-    description: Optional[str] = None
-    owner_id: int
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
-
-
+# Tasks
 class TaskCreate(BaseModel):
     title: str
     description: Optional[str] = None
-    status: str = "todo"
+    due_date: Optional[datetime] = None
+    priority: Optional[str] = "medium"
+    assigned_to: Optional[int] = None
     project_id: int
-    assignee_id: Optional[int] = None
 
-
-class TaskOut(BaseModel):
-    id: int
-    title: str
-    description: Optional[str] = None
-    status: str
-    project_id: int
-    assignee_id: Optional[int] = None
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
-
+class TaskUpdate(BaseModel):
+    status: Optional[str] = None
+    priority: Optional[str] = None
+    assigned_to: Optional[int] = None

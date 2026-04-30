@@ -1,29 +1,27 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+from ..database import get_db
+from ..models import Task
+from ..schemas import TaskCreate, TaskUpdate
 
-from app import models, schemas
-from app.database import get_db
+router = APIRouter(prefix="/tasks", tags=["tasks"])
 
-
-router = APIRouter()
-
-
-@router.post("/", response_model=schemas.TaskOut, status_code=status.HTTP_201_CREATED)
-def create_task(payload: schemas.TaskCreate, db: Session = Depends(get_db)):
-    task = models.Task(
-        title=payload.title,
-        description=payload.description,
-        status=payload.status,
-        project_id=payload.project_id,
-        assignee_id=payload.assignee_id,
-    )
-    db.add(task)
+@router.post("/")
+def create_task(task: TaskCreate, db: Session = Depends(get_db)):
+    new_task = Task(**task.dict())
+    db.add(new_task)
     db.commit()
-    db.refresh(task)
+    db.refresh(new_task)
+    return new_task
+
+@router.get("/")
+def get_tasks(db: Session = Depends(get_db)):
+    return db.query(Task).all()
+
+@router.put("/{task_id}")
+def update_task(task_id: int, update: TaskUpdate, db: Session = Depends(get_db)):
+    task = db.query(Task).filter(Task.id == task_id).first()
+    for key, value in update.dict(exclude_unset=True).items():
+        setattr(task, key, value)
+    db.commit()
     return task
-
-
-@router.get("/", response_model=list[schemas.TaskOut])
-def list_tasks(db: Session = Depends(get_db)):
-    return db.query(models.Task).order_by(models.Task.id.desc()).all()
-

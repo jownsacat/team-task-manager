@@ -1,51 +1,37 @@
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Enum
 from sqlalchemy.orm import relationship
-
-from app.database import Base
-
+from .database import Base
+import datetime
 
 class User(Base):
     __tablename__ = "users"
-
     id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
-    hashed_password = Column(String, nullable=False)
-    is_active = Column(Boolean, default=True, nullable=False)
-
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-
-    projects = relationship("Project", back_populates="owner", cascade="all, delete-orphan")
-    tasks = relationship("Task", back_populates="assignee")
-
+    password_hash = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
 class Project(Base):
     __tablename__ = "projects"
-
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True, nullable=False)
-    description = Column(Text, nullable=True)
+    name = Column(String, nullable=False)
+    creator_id = Column(Integer, ForeignKey("users.id"))
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
-    owner_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-    owner = relationship("User", back_populates="projects")
-
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-
-    tasks = relationship("Task", back_populates="project", cascade="all, delete-orphan")
-
+class ProjectMember(Base):
+    __tablename__ = "project_members"
+    id = Column(Integer, primary_key=True, index=True)
+    project_id = Column(Integer, ForeignKey("projects.id"))
+    user_id = Column(Integer, ForeignKey("users.id"))
+    role = Column(Enum("admin", "member", name="role_enum"), default="member")
 
 class Task(Base):
     __tablename__ = "tasks"
-
     id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, index=True, nullable=False)
-    description = Column(Text, nullable=True)
-    status = Column(String, default="todo", nullable=False)
-
-    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False, index=True)
-    project = relationship("Project", back_populates="tasks")
-
-    assignee_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
-    assignee = relationship("User", back_populates="tasks")
-
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-
+    title = Column(String, nullable=False)
+    description = Column(String)
+    due_date = Column(DateTime)
+    priority = Column(Enum("low", "medium", "high", name="priority_enum"), default="medium")
+    status = Column(Enum("todo", "in_progress", "done", name="status_enum"), default="todo")
+    project_id = Column(Integer, ForeignKey("projects.id"))
+    assigned_to = Column(Integer, ForeignKey("users.id"), nullable=True)

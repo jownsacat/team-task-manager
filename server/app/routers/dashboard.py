@@ -1,17 +1,22 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy import func
 from sqlalchemy.orm import Session
+from ..database import get_db
+from ..models import Task
+from datetime import datetime
 
-from app import models
-from app.database import get_db
-
-
-router = APIRouter()
-
+router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
 @router.get("/")
-def dashboard(db: Session = Depends(get_db)):
-    projects = db.query(func.count(models.Project.id)).scalar() or 0
-    tasks = db.query(func.count(models.Task.id)).scalar() or 0
-    return {"projects": projects, "tasks": tasks}
-
+def get_stats(db: Session = Depends(get_db)):
+    total = db.query(Task).count()
+    todo = db.query(Task).filter(Task.status == "todo").count()
+    in_progress = db.query(Task).filter(Task.status == "in_progress").count()
+    done = db.query(Task).filter(Task.status == "done").count()
+    overdue = db.query(Task).filter(Task.due_date < datetime.utcnow(), Task.status != "done").count()
+    return {
+        "total": total,
+        "todo": todo,
+        "in_progress": in_progress,
+        "done": done,
+        "overdue": overdue
+    }
