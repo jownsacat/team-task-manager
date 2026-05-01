@@ -25,8 +25,8 @@ const Signup = () => {
         email: form.email,
         password: form.password,
       });
-      if (res.data && res.data.token) {
-        localStorage.setItem("token", res.data.token);
+      if (res.data && res.data.access_token) {
+        localStorage.setItem("token", res.data.access_token);
         navigate("/projects");
       } else {
         setError("Invalid response from server.");
